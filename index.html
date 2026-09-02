@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Codex Multi-Account Manager</title>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/logo.png" type="image/png">
+    <link rel="shortcut icon" href="/logo.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #090714 0%, #0c0c1e 100%);
+            --panel-bg: rgba(255, 255, 255, 0.03);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --primary: #8b5cf6;
+            --primary-glow: rgba(139, 92, 246, 0.4);
+            --accent: #d946ef;
+            --success: #10b981;
+            --success-glow: rgba(16, 185, 129, 0.4);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.4);
+            --warning: #f59e0b;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2.5rem 1.5rem;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 680px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--panel-border);
+            border-radius: 24px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .bg-glow-1 {
+            position: absolute; top: -100px; right: -100px;
+            width: 300px; height: 300px;
+            background: var(--primary-glow);
+            filter: blur(120px); border-radius: 50%;
+            z-index: 0; pointer-events: none;
+        }
+        .bg-glow-2 {
+            position: absolute; bottom: -100px; left: -100px;
+            width: 300px; height: 300px;
+            background: rgba(217, 70, 239, 0.2);
+            filter: blur(120px); border-radius: 50%;
+            z-index: 0; pointer-events: none;
+        }
+
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 2rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 1.5rem;
+        }
+        .brand h1 {
+            font-size: 1.6rem; font-weight: 800;
+            background: linear-gradient(to right, #ffffff, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .brand p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+
+        .system-status {
+            display: flex; align-items: center; gap: 0.6rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 0.5rem 1rem; border-radius: 100px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); }
+        .status-dot.active {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success-glow);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16,185,129,0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16,185,129,0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+        }
+
+        /* Active Account Callout */
+        .active-callout {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.25);
+            border-radius: 18px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 10px 30px rgba(139, 92, 246, 0.05);
+        }
+        .active-callout-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .active-callout-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #c084fc;
+            font-weight: 700;
+        }
+        .active-callout-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .active-callout-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--success-glow);
+            display: inline-block;
+        }
+
+        .global-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2.5rem; }
+
+        .btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-main);
+            padding: 0.75rem 1.25rem; border-radius: 14px;
+            font-family: inherit; font-size: 0.85rem; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .badge-plus { background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.3); font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 6px; text-transform: uppercase; margin-left: 0.5rem; }
+        .badge-free { background: rgba(156, 163, 175, 0.15); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.3); font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 6px; text-transform: uppercase; margin-left: 0.5rem; }
+        .account-note-input { background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); color: #a1a1aa; border-radius: 8px; padding: 0.4rem 0.6rem; font-size: 0.8rem; width: 100%; margin-top: 0.75rem; font-family: inherit; transition: border-color 0.2s; }
+        .account-note-input:focus { outline: none; border-color: rgba(139, 92, 246, 0.5); color: #fff; }
+        .timer-display { font-size: 0.8rem; font-family: monospace; color: #fbbf24; font-weight: 700; background: rgba(251, 191, 36, 0.1); padding: 0.2rem 0.5rem; border-radius: 6px; }
+        .timer-ready { font-size: 0.8rem; font-weight: 700; color: #10b981; }
+        .btn:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
+        .btn:active { transform: translateY(0); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+        .btn-primary { background: var(--primary); border-color: transparent; box-shadow: 0 4px 15px var(--primary-glow); }
+        .btn-primary:hover { background: #7c3aed; box-shadow: 0 6px 20px rgba(139,92,246,0.6); }
+        .btn-success { background: var(--success); border-color: transparent; box-shadow: 0 4px 15px var(--success-glow); }
+        .btn-success:hover { background: #059669; box-shadow: 0 6px 20px rgba(16,185,129,0.6); }
+        .btn-danger { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.2); color: #f87171; }
+        .btn-danger:hover { background: var(--danger); color: #fff; border-color: transparent; box-shadow: 0 4px 15px rgba(239,68,68,0.4); }
+        .btn-icon {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            padding: 0.55rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-icon:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #f87171;
+            transform: scale(1.05);
+        }
+
+        .accounts-section { margin-bottom: 2rem; }
+        .section-title {
+            font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-muted); margin-bottom: 1rem; font-weight: 700;
+        }
+        .accounts-list { display: flex; flex-direction: column; gap: 1rem; }
+
+        .account-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 18px; padding: 1.25rem 1.5rem;
+            display: flex; flex-direction: column;
+            transition: all 0.3s ease;
+        }
+        .account-card:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.1); transform: translateX(4px); }
+        .account-card.active {
+            background: rgba(139,92,246,0.06);
+            border-color: rgba(139,92,246,0.3);
+            box-shadow: 0 4px 20px rgba(139,92,246,0.05);
+        }
+        .account-info { display: flex; flex-direction: column; gap: 0.25rem; }
+        .account-name-container { display: flex; align-items: center; gap: 0.5rem; }
+        .account-name { font-weight: 700; font-size: 1.05rem; }
+        
+        .badge-active {
+            font-size: 0.7rem; background: rgba(16, 185, 129, 0.15); color: #34d399;
+            padding: 0.15rem 0.5rem; border-radius: 100px; font-weight: 600;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .badge-parked {
+            font-size: 0.7rem; background: rgba(139, 92, 246, 0.15); color: #c084fc;
+            padding: 0.15rem 0.5rem; border-radius: 100px; font-weight: 600;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .badge-clean {
+            font-size: 0.7rem; background: rgba(255, 158, 11, 0.15); color: #fbbf24;
+            padding: 0.15rem 0.5rem; border-radius: 100px; font-weight: 600;
+            border: 1px solid rgba(255, 158, 11, 0.3);
+        }
+
+        .account-path { font-size: 0.75rem; color: var(--text-muted); font-family: monospace; }
+
+        .account-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Setup Wizard UI styling */
+        .wizard-card {
+            background: rgba(245, 158, 11, 0.03);
+            border: 1.5px solid rgba(245, 158, 11, 0.3);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .wizard-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #fbbf24;
+        }
+        .wizard-steps {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-main);
+        }
+        .wizard-step-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+        .wizard-step-num {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .wizard-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background: rgba(0,0,0,0.2);
+            padding: 1.25rem;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .wizard-explain {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid transparent; border-top-color: var(--text-main);
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Swap overlay */
+        .swap-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(9, 7, 20, 0.85);
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column; gap: 1.5rem; z-index: 100;
+        }
+        .swap-overlay.active { display: flex; }
+        .swap-overlay .spinner-big {
+            width: 48px; height: 48px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        .swap-overlay p { font-size: 1.1rem; font-weight: 600; color: var(--text-main); }
+        .swap-overlay .sub { font-size: 0.85rem; color: var(--text-muted); margin-top: -0.5rem; text-align: center; max-width: 80%; line-height: 1.4; }
+
+        .toast {
+            position: fixed; bottom: 2rem;
+            background: rgba(12,10,29,0.9);
+            border: 1px solid var(--panel-border);
+            padding: 0.85rem 1.5rem; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 0.75rem;
+            transform: translateY(100px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 999; font-size: 0.85rem; font-weight: 500;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        footer {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 2rem; font-size: 0.75rem; color: var(--text-muted);
+        }
+        .shutdown-btn {
+            background: transparent; border: none; color: var(--text-muted);
+            cursor: pointer; font-family: inherit; font-size: 0.75rem;
+            text-decoration: underline; transition: color 0.2s;
+        }
+        .shutdown-btn:hover { color: var(--danger); }
+    </style>
+</head>
+<body>
+    <div class="bg-glow-1"></div>
+    <div class="bg-glow-2"></div>
+
+    <!-- Swap Overlay -->
+    <div class="swap-overlay" id="swap-overlay">
+        <div class="spinner-big"></div>
+        <p id="swap-text">İşlem yapılıyor...</p>
+        <span class="sub" id="swap-sub">Lütfen bekleyin.</span>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="brand" style="display: flex; align-items: center; gap: 1rem;">
+                <img src="/logo.png" alt="Logo" style="width: 48px; height: 48px; border-radius: 50%; box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);">
+                <div>
+                    <h1>Codex Tools</h1>
+                    <p>Hesap Yönetimi ve Hızlı Geçiş Paneli</p>
+                </div>
+            </div>
+            <div class="system-status">
+                <span class="status-dot" id="system-dot"></span>
+                <span id="system-status-text">Bağlanıyor...</span>
+            </div>
+        </header>
+
+        <!-- Dynamic Main Section (Normal View vs Wizard View) -->
+        <div id="main-content">
+            <!-- Loading state placeholder -->
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner-big" style="width:32px; height:32px; border:2px solid rgba(255,255,255,0.1); border-top-color:var(--primary); border-radius:50%; animation:spin 1s linear infinite; display:inline-block;"></div>
+                <p style="margin-top: 1rem; color: var(--text-muted); font-size: 0.9rem;">Veriler yükleniyor...</p>
+            </div>
+        </div>
+
+        <footer>
+            <span>v2.3.0 &bull; Ferhat için Özel Geliştirilmiştir</span>
+            <button class="shutdown-btn" onclick="shutdownServer()">Paneli Kapat ve Çık</button>
+        </footer>
+    </div>
+
+    <div class="toast" id="toast"><span id="toast-text"></span></div>
+
+    <script>
+        let isBusy = false;
+        let statusInterval = null;
+        let isWizardMode = false;
+        let apiToken = '';
+
+        async function apiFetch(url, options = {}) {
+            if (!options.headers) options.headers = {};
+            options.headers['X-Manager-Token'] = apiToken;
+            let res = await fetch(url, { ...options, headers: options.headers });
+            if (res.status === 401 || res.status === 403) {
+                await fetchStatus();
+                options.headers['X-Manager-Token'] = apiToken;
+                res = await fetch(url, { ...options, headers: options.headers });
+            }
+            return res;
+        }
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[char]);
+        }
+
+        function inlineJsArg(value) {
+            return escapeHtml(JSON.stringify(String(value)));
+        }
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status', { cache: 'no-store' });
+                const data = await res.json();
+                apiToken = data.api_token || '';
+                
+                // Update header status dot
+                const dot = document.getElementById('system-dot');
+                const text = document.getElementById('system-status-text');
+                if (data.codex_running) {
+                    dot.classList.add('active');
+                    text.innerText = "Codex Çalışıyor";
+                } else {
+                    dot.classList.remove('active');
+                    text.innerText = "Codex Kapalı";
+                }
+
+                // Check mode
+                if (data.active_account === "yeni_oturum") {
+                    isWizardMode = true;
+                    renderWizardView();
+                } else {
+                    isWizardMode = false;
+                    renderDashboardView(data);
+                }
+
+            } catch (err) {
+                console.error("Status fetch error", err);
+            }
+        }
+
+        function formatTokenTime(hoursLeft) {
+            if (!hoursLeft || hoursLeft <= 0) return 'Süresi Doldu';
+            const totalMinutes = Math.round(hoursLeft * 60);
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            if (hours > 0) {
+                return mins > 0 ? `${hours} sa ${mins} dk` : `${hours} saat`;
+            }
+            return `${mins} dk`;
+        }
+
+        // Render standard Dashboard View
+        function renderDashboardView(data) {
+            const mainContent = document.getElementById('main-content');
+            
+            let activeName = "Bulunamadı";
+            const activeAccount = data.accounts.find(a => a.active);
+            if (activeAccount) {
+                activeName = activeAccount.name;
+            }
+
+            let accountsListHtml = '';
+            
+            // Render each account card
+            window.activeTimers = {}; // Store timer targets
+
+            data.accounts.forEach(acc => {
+                let badgeHtml = '';
+                let actionButtonHtml = '';
+                const safeId = escapeHtml(acc.id);
+                const safeName = escapeHtml(acc.name);
+                const idArg = inlineJsArg(acc.id);
+                const nameArg = inlineJsArg(acc.name);
+                
+                if (acc.active) {
+                    badgeHtml = `<span class="badge-active">Aktif Kullanımda</span>`;
+                    actionButtonHtml = `
+                        <span style="color:var(--success); font-weight:700; font-size:1rem; display:flex; align-items:center; gap:0.25rem; margin-right: 0.5rem;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                    `;
+                } else if (acc.status === 'parked') {
+                    badgeHtml = `<span class="badge-parked">Park Edilmiş</span>`;
+                    actionButtonHtml = `
+                        <button class="btn btn-primary" style="padding:0.45rem 1rem; font-size:0.8rem; background: #6d28d9;" onclick="switchAccount(${idArg}, ${nameArg}, false)">
+                            Park Et & Aktif Et
+                        </button>
+                        <button class="btn-icon" title="Hesabı Sil" onclick="deleteAccount(${idArg}, ${nameArg})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                    `;
+                } else {
+                    // status is clean
+                    badgeHtml = `<span class="badge-clean">Yeni (Giriş Bekliyor)</span>`;
+                    actionButtonHtml = `
+                        <button class="btn btn-success" style="padding:0.45rem 1rem; font-size:0.8rem;" onclick="switchAccount(${idArg}, ${nameArg}, true)">
+                            Giriş Yap / Başlat
+                        </button>
+                        <button class="btn-icon" title="Hesabı Sil" onclick="deleteAccount(${idArg}, ${nameArg})">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
+                    `;
+                }
+
+                let tokenBadgeHtml = '';
+                const timeStr = formatTokenTime(acc.token_hours_left);
+                if (acc.token_health === 'healthy') {
+                    tokenBadgeHtml = `<span style="background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 100px; font-weight: 600;" title="Oturum taze ve aktif">🟢 Canlı (${timeStr})</span>`;
+                } else if (acc.token_health === 'expiring_soon') {
+                    tokenBadgeHtml = `<span style="background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 100px; font-weight: 600;" title="Süresi dolmak üzere, otomatik tazelenecek">🟡 Tazeleniyor (${timeStr})</span>`;
+                } else if (acc.token_health === 'expired') {
+                    tokenBadgeHtml = `<span style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 100px; font-weight: 600;" title="Oturum süresi dolmuş, yeniden giriş gerekli">🔴 Giriş Gerekli</span>`;
+                }
+
+                accountsListHtml += `
+                    <div class="account-card ${acc.active ? 'active' : ''}">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                            <div class="account-info" style="flex: 1;">
+                                <div class="account-name-container" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                    <span class="account-name">${safeName}</span>
+                                    <button onclick="renameAccount(${idArg}, ${nameArg})" title="İsmi Düzenle" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:inline-flex; align-items:center; opacity:0.6; transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.6">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4z"></path></svg>
+                                    </button>
+                                    ${badgeHtml}
+                                    ${tokenBadgeHtml}
+                                    ${acc.plan === 'plus' ? '<span class="badge-plus">PLUS</span>' : (acc.plan ? '<span class="badge-free">FREE</span>' : '')}
+                                </div>
+                                <span class="account-path">.codex_${safeId}</span>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">🕒 Son Giriş: <strong style="color: #e4e4e7; font-weight: 600;">${escapeHtml(acc.last_login || 'Henüz Giriş Yapılmadı')}</strong></div>
+                                ${acc.expiry ? `<div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Bitiş: ${new Date(acc.expiry).toLocaleDateString()}</div>` : ''}
+                            </div>
+                            <div class="account-actions" style="display: flex; align-items: center; gap: 0.5rem;">
+                                ${actionButtonHtml}
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); align-items: stretch; width: 100%;">
+                            <input type="text" id="note-input-${safeId}" class="account-note-input" style="margin-top: 0; flex: 1;" placeholder="Bu hesap için bir not ekleyin..." value="${escapeHtml(acc.note || '')}" onfocus="window.isTypingNote = true;" onblur="window.isTypingNote = false;">
+                            <button class="btn btn-success" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; border-radius: 8px;" onclick="saveNote(${idArg}, document.getElementById('note-input-${safeId}').value)">
+                                ✓ Kaydet
+                            </button>
+                            <button class="btn" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 8px;" onclick="startTimerCustom(${idArg})">
+                                ⏱ Limit Sayacı
+                            </button>
+                        </div>
+                        <div style="margin-top: 0.5rem; text-align: right;" id="timer-text-${safeId}"></div>
+                    </div>
+                `;
+                
+                if (acc.timer && acc.timer > 0) {
+                    window.activeTimers[acc.id] = acc.timer;
+                }
+            });
+
+            mainContent.innerHTML = `
+                <!-- Active Account Callout -->
+                <div class="active-callout">
+                    <div class="active-callout-info">
+                        <span class="active-callout-title">Şu An Aktif Olan Hesap</span>
+                        <span class="active-callout-value">
+                            <span class="active-callout-dot"></span>
+                            <span id="active-account-display">${escapeHtml(activeName)}</span>
+                        </span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted); text-align: right; line-height: 1.4;">
+                        Oturumlar yerel olarak takas edilir,<br>
+                        çıkış yapılmasına gerek yoktur.
+                    </div>
+                </div>
+
+                <section class="global-actions">
+                    <button class="btn btn-primary" id="btn-start" onclick="startCodex()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 3l14 9-14 9V3z"/></svg>
+                        Codex'i Başlat
+                    </button>
+                    <button class="btn" style="background: rgba(139,92,246,0.15); color: #c084fc; border: 1px solid rgba(139,92,246,0.3);" onclick="refreshTokensManually()">
+                        🔄 Canlılığı Yenile
+                    </button>
+                    <button class="btn btn-danger" id="btn-kill" onclick="killCodex()">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+                        Codex'i Kapat
+                    </button>
+                </section>
+
+                <section class="accounts-section">
+                    <h2 class="section-title" style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>Hesap Listesi</span>
+                        <span style="font-size: 0.8rem; background: rgba(255,255,255,0.08); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); padding: 0.2rem 0.65rem; border-radius: 100px; font-weight: 600;">
+                            📊 Toplam ${data.accounts.length} Hesap
+                        </span>
+                    </h2>
+                    <div class="accounts-list">${accountsListHtml}</div>
+                </section>
+
+                <section class="accounts-section">
+                    <button class="btn btn-success" style="width: 100%; padding: 1rem; border-radius: 18px; font-size: 0.95rem; font-weight: 700; background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);" onclick="showLogoutPreStep()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right: 0.25rem;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Yeni Hesap Girişi Yap (Tam Otomatik Algılama)
+                    </button>
+                </section>
+                
+                <section class="accounts-section" style="margin-top: -0.5rem;">
+                    <button class="btn btn-danger" style="width: 100%; padding: 0.85rem; border-radius: 18px; font-size: 0.85rem; font-weight: 600; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.3); color: #f87171;" onclick="resetAllData()">
+                        ⚠️ Sistemi Sıfırla (Tüm Hesapları ve Çerezleri Temizle)
+                    </button>
+                </section>
+            `;
+        }
+
+        // Render Setup Wizard View (yeni_oturum mode)
+        function renderWizardView() {
+            const mainContent = document.getElementById('main-content');
+            
+            if (document.getElementById('wizard-form-box')) {
+                return;
+            }
+
+            mainContent.innerHTML = `
+                <div class="wizard-card" id="wizard-form-box">
+                    <div class="wizard-title">
+                        <div class="spinner" style="width: 20px; height: 20px; border-width: 3px; border-top-color: #fbbf24;"></div>
+                        <span>Yeni Oturum Kurulum Sihirbazı</span>
+                    </div>
+
+                    <ul class="wizard-steps">
+                        <li class="wizard-step-item" style="background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3);">
+                            <span class="wizard-step-num" style="background: var(--success);">✓</span>
+                            <span>Önceki hesap park edildi. Codex temiz oturumla açıldı.</span>
+                        </li>
+                        <li class="wizard-step-item">
+                            <span class="wizard-step-num">2</span>
+                            <span>Açılan Codex uygulamasında <strong>yeni hesabınızla giriş yapın</strong>.</span>
+                        </li>
+                        <li class="wizard-step-item">
+                            <span class="wizard-step-num">3</span>
+                            <span>Giriş yaptıktan sonra, alttaki "Girişi Tamamla" butonuna basın. E-posta adresiniz otomatik okunacak ve hesap kaydedilecektir.</span>
+                        </li>
+                    </ul>
+
+                    <div class="wizard-form" style="text-align: center;">
+                        <div class="wizard-explain" style="margin-bottom: 1rem; font-size: 0.85rem; text-align: left; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); padding: 0.75rem; border-radius: 10px;">
+                            💡 <strong>Bilgi:</strong> Klasör ismi veya görünüm adı yazmanıza gerek yoktur. Panel, girdiğiniz hesabı (Örn: ferhatozluk3@gmail.com) otomatik olarak tespit eder.
+                        </div>
+                        <div style="display: flex; gap: 0.75rem; justify-content: center; width: 100%;">
+                            <button class="btn btn-danger" style="padding: 0.75rem 1.5rem; flex: 1;" onclick="cancelNewLoginMode()">
+                                İptal Et / Geri Dön
+                            </button>
+                            <button class="btn btn-success" style="padding: 0.75rem 1.5rem; flex: 1; font-weight: 700;" onclick="saveNewLoginMode()">
+                                Girişi Tamamla &amp; Otomatik Kaydet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Pre-step: Show logout instruction modal before starting new login
+        function showLogoutPreStep() {
+            // Show a modal overlay asking user to sign out from Codex first
+            const overlay = document.createElement('div');
+            overlay.id = 'logout-prestep-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:9999;';
+            overlay.innerHTML = `
+                <div style="background: linear-gradient(135deg, #12091f 0%, #1a0a2e 100%); border: 1px solid rgba(239,68,68,0.4); border-radius: 24px; padding: 2rem; max-width: 480px; width: 90%; box-shadow: 0 0 60px rgba(139,92,246,0.3);">
+                    <div style="text-align:center; margin-bottom:1.5rem;">
+                        <div style="font-size:3rem; margin-bottom:0.75rem;">🔐</div>
+                        <h2 style="font-size:1.3rem; font-weight:800; color:#f3f4f6; margin-bottom:0.5rem;">Önce Codex'te Oturumu Kapat</h2>
+                        <p style="font-size:0.85rem; color:#9ca3af; line-height:1.6;">Codex, Windows hesabınız üzerinden otomatik giriş yapıyor. Yeni hesap eklemek için önce <strong style="color:#f3f4f6;">mevcut oturumu sunucu tarafında iptal etmeniz</strong> gerekiyor.</p>
+                    </div>
+                    
+                    <div style="background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.25); border-radius:14px; padding:1.25rem; margin-bottom:1.5rem;">
+                        <p style="font-size:0.82rem; color:#fca5a5; font-weight:600; margin-bottom:0.75rem;">⚠️ YAPILMASI GEREKEN ADIMLAR:</p>
+                        <ol style="font-size:0.82rem; color:#d1d5db; line-height:2; padding-left:1.25rem;">
+                            <li>Codex uygulamasını açın (zaten açıksa devam)</li>
+                            <li>Sol alttaki profil ikonuna tıklayın</li>
+                            <li><strong style="color:#f3f4f6;">"Oturumu Kapat"</strong> butonuna basın ve onaylayın</li>
+                            <li>Codex'in kapandığını bekleyin</li>
+                            <li>Aşağıdaki "✅ Çıkış Yaptım" butonuna basın</li>
+                        </ol>
+                    </div>
+
+                    <div style="background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25); border-radius:12px; padding:0.85rem; margin-bottom:1.5rem; font-size:0.8rem; color:#6ee7b7; line-height:1.5;">
+                        💡 <strong>Neden gerekli?</strong> "Oturumu Kapat" basıldığında OpenAI sunucusundaki token iptal oluyor. Bundan sonra hangi dosyayı silersek silelim, Windows SSO o hesabı otomatik açamıyor.
+                    </div>
+
+                    <div style="display:flex; gap:0.75rem;">
+                        <button onclick="document.getElementById('logout-prestep-overlay').remove()" style="flex:1; padding:0.85rem; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:#9ca3af; cursor:pointer; font-size:0.9rem; font-weight:600;">İptal</button>
+                        <button onclick="document.getElementById('logout-prestep-overlay').remove(); startNewLoginMode();" style="flex:2; padding:0.85rem; border-radius:12px; border:none; background:linear-gradient(135deg,#10b981,#059669); color:white; cursor:pointer; font-size:0.9rem; font-weight:700;">✅ Çıkış Yaptım, Devam Et</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        }
+
+        // Action: Start new login mode
+        async function startNewLoginMode() {
+            if (isBusy) return;
+            isBusy = true;
+            
+            document.getElementById('swap-text').innerText = `Temiz Oturum Hazırlanıyor...`;
+            document.getElementById('swap-sub').innerHTML = `Mevcut oturumunuz güvenle park ediliyor.<br>Ardından yeni hesap girişi için temiz bir ekran açılacak.`;
+            document.getElementById('swap-overlay').classList.add('active');
+            
+            clearInterval(statusInterval);
+
+            let overlayDelay = 4500;
+            try {
+                const res = await apiFetch('/api/start_new_login');
+                const r = await res.json();
+                if (r.success) {
+                    showToast("✅ Sıfır oturum hazırlandı. Codex ekranından giriş yapın.");
+                    isWizardMode = true;
+                    renderWizardView();
+                } else {
+                    showToast(r.error || "Temiz oturum hazırlanamadı!", true);
+                    overlayDelay = 1500;
+                }
+            } catch (err) {
+                showToast("Sunucu bağlantı hatası!", true);
+                overlayDelay = 1500;
+            } finally {
+                await new Promise(r => setTimeout(r, overlayDelay));
+                document.getElementById('swap-overlay').classList.remove('active');
+                isBusy = false;
+                fetchStatus();
+                statusInterval = setInterval(fetchStatus, 4000);
+            }
+        }
+
+        // Action: Save the newly logged in account (Automatic Email Detection)
+        async function saveNewLoginMode() {
+            if (isBusy) return;
+            isBusy = true;
+
+            document.getElementById('swap-text').innerText = `Hesap Bilgisi Okunuyor...`;
+            document.getElementById('swap-sub').innerHTML = `Giriş yaptığınız e-posta adresi otomatik olarak okunuyor.<br>Bu işlem birkaç saniye sürebilir...`;
+            document.getElementById('swap-overlay').classList.add('active');
+
+            clearInterval(statusInterval);
+
+            let overlayDelay = 4500;
+            let manualLabel = null;
+            try {
+                let res = await apiFetch('/api/save_new_login');
+                let r = await res.json();
+                if (r.requires_label) {
+                    // Remove overlay while waiting for user prompt input
+                    document.getElementById('swap-overlay').classList.remove('active');
+                    manualLabel = prompt('E-posta otomatik okunamadı. Bu hesap için bir e-posta veya ayırt edici ad girin:');
+                    if (!manualLabel || !manualLabel.trim()) {
+                        showToast('Kayıt iptal edildi; oturum açık bırakıldı.', true);
+                        overlayDelay = 0;
+                        return;
+                    }
+                    document.getElementById('swap-overlay').classList.add('active');
+                    res = await apiFetch(`/api/save_new_login?label=${encodeURIComponent(manualLabel.trim())}`);
+                    r = await res.json();
+                }
+                if (r.success) {
+                    showToast(`✅ "${r.label}" hesabı kaydedildi! Artık Codex'i kendiniz açabilirsiniz.`);
+                    isWizardMode = false;
+                } else {
+                    showToast(r.error || "Oturum çerezleri okunamadı! Lütfen giriş yaptığınızdan emin olun.", true);
+                    overlayDelay = 1500;
+                }
+            } catch (err) {
+                showToast("Bağlantı hatası veya işlem zaman aşımı!", true);
+                overlayDelay = 1500;
+            } finally {
+                await new Promise(r => setTimeout(r, overlayDelay));
+                document.getElementById('swap-overlay').classList.remove('active');
+                isBusy = false;
+                fetchStatus();
+                statusInterval = setInterval(fetchStatus, 4000);
+            }
+        }
+
+        // Action: Cancel new login and revert
+        async function cancelNewLoginMode() {
+            if (isBusy) return;
+            isBusy = true;
+
+            document.getElementById('swap-text').innerText = `İptal Ediliyor...`;
+            document.getElementById('swap-sub').innerHTML = `Temiz oturum siliniyor.<br>Önceki aktif hesabınız geri yüklenecek...`;
+            document.getElementById('swap-overlay').classList.add('active');
+
+            clearInterval(statusInterval);
+
+            let overlayDelay = 4500;
+            try {
+                const res = await apiFetch('/api/cancel_new_login');
+                const r = await res.json();
+                if (r.success) {
+                    if (r.was_empty) {
+                        showToast("✅ Sihirbaz kapatıldı. Yeni hesap girişi yapmak için \"Yeni Hesap Girişi Yap\" butonunu kullanın.");
+                    } else {
+                        showToast("✅ Yeni oturum iptal edildi, önceki hesaba dönüldü. Codex'i kendiniz açabilirsiniz.");
+                    }
+                    isWizardMode = false;
+                } else {
+                    // Error case — still force exit wizard so user isn't permanently stuck
+                    showToast((r.error || "Geri dönülemedi!") + " Dashboard'a yönlendiriliyor...", true);
+                    isWizardMode = false;
+                    overlayDelay = 1500; // Faster recovery on error
+                }
+            } catch (err) {
+                showToast("Bağlantı hatası! Dashboard'a yönlendiriliyor...", true);
+                isWizardMode = false;
+                overlayDelay = 1500;
+            } finally {
+                await new Promise(r => setTimeout(r, overlayDelay));
+                document.getElementById('swap-overlay').classList.remove('active');
+                isBusy = false;
+                fetchStatus();
+                statusInterval = setInterval(fetchStatus, 4000);
+            }
+        }
+
+        async function switchAccount(accountId, accountName, isClean = false) {
+            if (isBusy) return;
+            isBusy = true;
+
+            const activeName = document.getElementById('active-account-display') 
+                ? document.getElementById('active-account-display').innerText 
+                : "Mevcut";
+            const safeActiveName = escapeHtml(activeName);
+            const safeAccountName = escapeHtml(accountName);
+            document.getElementById('swap-overlay').classList.add('active');
+
+            if (isClean) {
+                document.getElementById('swap-text').innerText = `Temiz Oturum Hazırlanıyor...`;
+                document.getElementById('swap-sub').innerHTML = `Mevcut aktif <strong>${safeActiveName}</strong> oturumu park ediliyor.<br>Ardından <strong>${safeAccountName}</strong> için temiz giriş ekranı hazırlanacak.`;
+            } else {
+                document.getElementById('swap-text').innerText = `Oturumlar Yer Değiştiriyor...`;
+                document.getElementById('swap-sub').innerHTML = `Mevcut aktif <strong>${safeActiveName}</strong> oturumu park ediliyor.<br>Ardından <strong>${safeAccountName}</strong> oturumu geri yüklenecek.`;
+            }
+
+            clearInterval(statusInterval);
+
+            try {
+                const res = await apiFetch(`/api/switch?account=${encodeURIComponent(accountId)}`);
+                const result = await res.json();
+                if (result.success) {
+                    const hasWarnings = result.warnings && result.warnings.length > 0;
+                    if (hasWarnings) {
+                        showToast(`⚠️ Hesap değiştirildi ancak bazı dosyalar kilitli kaldı. Lütfen Codex'i kendiniz açın.`, true);
+                    } else {
+                        showToast(isClean 
+                            ? "✅ Temiz oturum hazırlandı! Giriş yapabilirsiniz — Codex otomatik açılıyor..."
+                            : "✅ Oturum başarıyla yüklendi! Codex otomatik açılıyor..."
+                        );
+                    }
+                } else {
+                    showToast(result.error || "İşlem tamamlanamadı!", true);
+                }
+            } catch (err) {
+                showToast("Sunucu hatası! Lütfen paneli tekrar başlatın.", true);
+            } finally {
+                await new Promise(r => setTimeout(r, 4500));
+                document.getElementById('swap-overlay').classList.remove('active');
+                isBusy = false;
+                fetchStatus();
+                statusInterval = setInterval(fetchStatus, 4000);
+            }
+        }
+
+        async function deleteAccount(accountId, accountName) {
+            if (isBusy) return;
+            if (!confirm(`"${accountName}" hesabını silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve bu hesaba ait tüm geçmiş silinir.`)) {
+                return;
+            }
+
+            isBusy = true;
+            showToast("Hesap siliniyor...");
+            try {
+                const res = await apiFetch(`/api/delete?account=${encodeURIComponent(accountId)}`);
+                const r = await res.json();
+                if (r.success) {
+                    showToast(`"${accountName}" hesabı başarıyla silindi.`);
+                    fetchStatus();
+                } else {
+                    showToast(r.error || "Hesap silinemedi!", true);
+                }
+            } catch {
+                showToast("Bağlantı hatası!", true);
+            } finally {
+                isBusy = false;
+            }
+        }
+
+        setInterval(() => {
+            const now = Math.floor(Date.now() / 1000);
+            if (window.activeTimers) {
+                for (const [id, targetTime] of Object.entries(window.activeTimers)) {
+                    const el = document.getElementById(`timer-text-${id}`);
+                    if (!el) continue;
+                    
+                    const diff = targetTime - now;
+                    if (diff > 0) {
+                        const h = Math.floor(diff / 3600);
+                        const m = Math.floor((diff % 3600) / 60);
+                        const s = diff % 60;
+                        el.innerHTML = `<span class="timer-display">${h}s ${m}d ${s}s kaldı</span>`;
+                    } else {
+                        el.innerHTML = `<span class="timer-ready">✓ Limit Sıfırlandı</span>`;
+                    }
+                }
+            }
+        }, 1000);
+
+        async function saveNote(accountId, note) {
+            window.isTypingNote = true;
+            try {
+                const res = await apiFetch('/api/set_note', {
+                    method: 'POST',
+                    body: JSON.stringify({ account_id: accountId, note: note })
+                });
+                const r = await res.json();
+                if (r.success) {
+                    showToast("✅ Not başarıyla kaydedildi!");
+                } else {
+                    showToast("Not kaydedilemedi!", true);
+                }
+            } catch (err) {
+                console.error("Not kaydedilemedi", err);
+                showToast("Not kaydedilemedi!", true);
+            } finally {
+                setTimeout(() => {
+                    window.isTypingNote = false;
+                    fetchStatus();
+                }, 600);
+            }
+        }
+
+        async function startTimerCustom(accountId) {
+            const choice = prompt("Limit sayacı kaç saat olsun?\n(Örn: 3, 4, 5 yazabilirsiniz veya sayacı sıfırlamak için 0 yazın):", "3");
+            if (choice === null) return;
+            const hours = parseFloat(choice);
+            if (isNaN(hours) || hours < 0) {
+                showToast("Geçersiz saat girdiniz!", true);
+                return;
+            }
+            if (hours === 0) {
+                await startTimer(accountId, 0);
+                showToast("⏱ Sayaç sıfırlandı.");
+            } else {
+                await startTimer(accountId, hours);
+            }
+        }
+
+        async function startTimer(accountId, hours) {
+            const seconds = hours * 3600;
+            try {
+                const r = await apiFetch('/api/set_timer', {
+                    method: 'POST',
+                    body: JSON.stringify({ account_id: accountId, duration: seconds })
+                }).then(r => r.json());
+                
+                if (r.success) {
+                    showToast(hours > 0 ? `⏱ ${hours} saatlik sayaç başlatıldı!` : `⏱ Sayaç temizlendi.`);
+                    fetchStatus();
+                }
+            } catch (err) {
+                console.error("Sayaç başlatılamadı", err);
+            }
+        }
+
+        async function killCodex() {
+            if (isBusy) return;
+            isBusy = true;
+            showToast("Codex kapatılıyor...");
+            try {
+                await apiFetch('/api/kill');
+                showToast("Codex başarıyla kapatıldı.");
+            } catch { showToast("Codex kapatılamadı!", true); }
+            finally {
+                setTimeout(() => { isBusy = false; fetchStatus(); }, 2000);
+            }
+        }
+
+        async function renameAccount(accountId, currentName) {
+            const newName = prompt(`"${currentName}" hesabı için yeni bir isim girin:`, currentName);
+            if (newName === null || newName.trim() === "" || newName.trim() === currentName) {
+                return;
+            }
+            try {
+                const res = await apiFetch(`/api/rename?account=${encodeURIComponent(accountId)}&name=${encodeURIComponent(newName.trim())}`);
+                const r = await res.json();
+                if (r.success) {
+                    showToast("Hesap ismi güncellendi.");
+                    fetchStatus();
+                } else {
+                    showToast(r.error || "İsim güncellenemedi!", true);
+                }
+            } catch {
+                showToast("Bağlantı hatası!", true);
+            }
+        }
+
+        async function refreshTokensManually() {
+            showToast("Tüm hesap oturumları tazeleniyor...");
+            try {
+                const res = await apiFetch('/api/refresh_tokens');
+                const data = await res.json();
+                showToast("✅ " + (data.message || "Tazelendi"));
+                fetchStatus();
+            } catch {
+                showToast("Tazeleme isteği gönderilemedi!", true);
+            }
+        }
+
+        async function startCodex() {
+            if (isBusy) return;
+            isBusy = true;
+            showToast("Codex başlatılıyor...");
+            try {
+                const res = await apiFetch('/api/start');
+                const r = await res.json();
+                showToast(r.success ? "Codex başlatıldı." : "Codex başlatılamadı!", !r.success);
+            } catch { showToast("Hata oluştu!", true); }
+            finally {
+                setTimeout(() => { isBusy = false; fetchStatus(); }, 2000);
+            }
+        }
+
+        async function fetchStatus() {
+            if (isBusy || window.isTypingNote) return;
+            try {
+                const res = await apiFetch('/api/status');
+                const data = await res.json();
+                
+                const sysDot = document.getElementById('system-dot');
+                const sysText = document.getElementById('system-status-text');
+                if (data.codex_running) {
+                    sysDot.className = 'status-dot active';
+                    sysText.innerText = 'Codex Çalışıyor';
+                } else {
+                    sysDot.className = 'status-dot offline';
+                    sysText.innerText = 'Codex Kapalı';
+                }
+
+                if (data.active_account === "yeni_oturum") {
+                    isWizardMode = true;
+                    renderWizardView();
+                } else {
+                    isWizardMode = false;
+                    renderDashboardView(data);
+                }
+            } catch (err) {
+                console.error("Status fetch error", err);
+            }
+        }
+
+        async function resetAllData() {
+            if (isBusy) return;
+            if (!confirm("⚠️ UYARI: Bu işlem tüm kayıtlı hesapları, şifreleri, logları ve tarayıcı çerezlerini tamamen sıfırlayacaktır! Baştan başlamak istediğinize emin misiniz?")) {
+                return;
+            }
+            isBusy = true;
+            document.getElementById('swap-text').innerText = `Sistem Sıfırlanıyor...`;
+            document.getElementById('swap-sub').innerHTML = `Tüm yedek hesaplar, şifreler ve tarayıcı oturumları siliniyor.`;
+            document.getElementById('swap-overlay').classList.add('active');
+            
+            clearInterval(statusInterval);
+            try {
+                const res = await apiFetch('/api/reset_all');
+                const r = await res.json();
+                if (r.success) {
+                    showToast("✅ Tüm sistem sıfırlandı! Codex'i kendiniz açıp yeni hesap girişi yapabilirsiniz.");
+                    isWizardMode = true;
+                    renderWizardView();
+                } else {
+                    showToast(r.error || "Sıfırlama başarısız oldu!", true);
+                }
+            } catch (err) {
+                showToast("Bağlantı hatası!", true);
+            } finally {
+                await new Promise(r => setTimeout(r, 4500));
+                document.getElementById('swap-overlay').classList.remove('active');
+                isBusy = false;
+                fetchStatus();
+                statusInterval = setInterval(fetchStatus, 4000);
+            }
+        }
+
+        async function shutdownServer() {
+            showToast("Panel kapatılıyor...");
+            try { await apiFetch('/api/shutdown'); } catch {}
+            setTimeout(() => window.close(), 500);
+        }
+
+        let toastTimer;
+        function showToast(text, isError = false) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = text;
+            toast.style.borderColor = isError ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)';
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 4000);
+        }
+
+        // Init
+        fetchStatus();
+        statusInterval = setInterval(fetchStatus, 4000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+dashboard.log
+error.log
+output.log
+
+# Diagnostic reports and temporary dumps
+diagnose_report.txt
+response.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
